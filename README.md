@@ -8,10 +8,12 @@ The simplest, fastest repository for training/finetuning medium-sized GPTs. It's
 Dependencies:
 
 - [pytorch](https://pytorch.org) <3
+- [numpy](https://numpy.org/install/) <3
 - `pip install datasets` for huggingface datasets <3 (if you want to download + preprocess OpenWebText)
 - `pip install tiktoken` for OpenAI's fast bpe code <3
 - `pip install wandb` for optional logging <3
 - `pip install tqdm`
+- `pip install networkx`
 
 ## usage
 
@@ -84,12 +86,38 @@ Code by default now uses [PyTorch 2.0](https://pytorch.org/get-started/pytorch-2
 
 ## todos
 
-A few that I'm aware of, other than the ones mentioned in code:
+A few todos I'm aware of:
+
+Optimizations
 
 - Additional optimizations to the running time
-- Report and track other metrics e.g. PPL
+- Investigate need for an actual Data Loader with a dedicated worker process for data
+- Look into more efficient fused optimizers (e.g. apex)
+- Re-evaluate use of flash attention (previously I wasn't able to get the forward pass to match up so I took it out)
+- CUDA Graphs?
+- Investigate potential speedups from Lightning or huggingface Accelerate
+
+Features / APIs
+
+- Add back fp16 support? (would need to also add back gradient scaler)
+- Add CPU support
+- Finetune the finetuning script, I think the hyperparams are not great
+- Replace poor man's configurator, and make sample.py configurable...
+- Report and track other metrics e.g. perplexity, num_tokens, MFU, ...
 - Eval zero-shot perplexities on PTB, WikiText, other related benchmarks
-- Current initialization (PyTorch default) departs from GPT-2. In a very quick experiment I found it to be superior to the one suggested in the papers, but that can't be right
-- Currently fp16 is much faster than bf16. Potentially revert back to using fp16 and re-introduce the gradient scaler?
-- Add some finetuning dataset and guide on some dataset for demonstration.
-- Reproduce GPT-2 results. It was estimated ~3 years ago that the training cost of 1.5B model was ~$50K
+
+Suspiciousness
+
+- Current initialization (PyTorch default) departs from GPT-2. In a very quick experiment I found it to be superior to the one suggested in the papers, but that can't be right?
+- I don't currently seem to need gradient clipping but it is very often used (?). Nothing is exploding so far at these scales but maybe I'm laeving performance on the table. Evaluate with/without.
+- I am still not 100% confident that my GPT-2 small reproduction hyperparameters are good, if someone has reproduced GPT-2 I'd be eager to exchange notes ty
+- I keep seeing different values cited for weight decay and AdamW betas, look into
+- I can't exactly reproduce Chinchilla paper results, see [scaling_laws.ipynb](scaling_laws.ipynb) notebook
+
+Results
+
+- Actually reproduce GPT-2 results and have clean configs that reproduce the result. It was estimated ~3 years ago that the training cost of 1.5B model was ~$50K (?). Sounds a bit too high.
+
+# acknowledgements
+
+Thank you [Lambda labs](https://lambdalabs.com) for supporting the training costs of nanoGPT experiments.
