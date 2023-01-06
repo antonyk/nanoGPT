@@ -7,9 +7,8 @@ import tiktoken
 from model import GPTConfig, GPT
 
 # -----------------------------------------------------------------------------
-# todo make these overridable like in train.py
 out_dir = 'out'
-device = 'cuda:2'
+device = 'cuda'
 compile = False
 start = "\n" # or "<|endoftext|>" or whatever you like
 num_samples = 10 # number of samples to draw
@@ -17,6 +16,7 @@ max_new_tokens = 500 # number of tokens generated in each sample
 temperature = 0.8 # higher temperature (up to 1) is more random, lower (down to 0) means more greedy
 top_k = 200 # retain only the top_k most likely tokens, clamp others to have 0 probability
 seed = 1337
+exec(open('configurator.py').read()) # overrides from command line or config file
 # -----------------------------------------------------------------------------
 
 torch.manual_seed(seed)
@@ -29,7 +29,12 @@ ckpt_path = os.path.join(out_dir, 'ckpt.pt')
 checkpoint = torch.load(ckpt_path, map_location=device)
 gptconf = GPTConfig(**checkpoint['model_args'])
 model = GPT(gptconf)
-model.load_state_dict(checkpoint['model'])
+state_dict = checkpoint['model']
+unwanted_prefix = '_orig_mod.'
+for k,v in list(state_dict.items()):
+    if k.startswith(unwanted_prefix):
+        state_dict[k[len(unwanted_prefix):]] = state_dict.pop(k)
+model.load_state_dict(state_dict)
 model.eval()
 model.to(device)
 if compile:
